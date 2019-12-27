@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.secret_key = "Çok gizli bir key"
 
 # veri tabanı bağlantısı
-uri = os.getenv('MONGO_LOCAL')
+uri = os.getenv('MONGO_ATLAS_URI')
 client = MongoClient(uri)
 # tododb: veri tabanı adı, todos ve user: collection ismi
 todo = client.tododb.todos
@@ -22,7 +22,30 @@ user = client.tododb.user
 def index():
     return render_template('index.html')
 
-@app.route('/kayit', methods=['GET','POST'])
+
+@app.route('/iletisim')
+def iletisim():
+    return render_template('iletisim.html')
+
+
+@app.route('/galeri')
+def galeri():
+    return render_template('galeri.html')
+
+
+@app.route('/biz')
+def biz():
+    return render_template('hakkimizda.html')
+
+
+@app.route('/iletisim_al', methods=['POST'])
+def iletisim_al():
+    # iletişim formundan gelen bilgileri al işle
+
+    return render_template('index.html')
+
+
+@app.route('/kayit', methods=['GET', 'POST'])
 def kayit():
     if request.method == 'GET':
         return render_template('kayit.html')
@@ -30,18 +53,18 @@ def kayit():
     # formdan gelen bilgileri al
     eposta = request.form.get("eposta")
     sifre = request.form.get("sifre")
-    #veri tabanına kaydet
-    u = user.find_one({'eposta':eposta})
-    
-    if u is None :
-        user.insert_one({'eposta': eposta, 'sifre': sifre})
+    # veri tabanına kaydet
+    u = user.find_one({"eposta": eposta})
+
+    if u is None:
+        user.insert_one({eposta: "eposta", sifre: "sifre"})
     else:
         flash(f"{eposta} eposta adresi daha önceden sistemde kayıtlı")
         return redirect('/kayit')
-    return redirect('/')    
+    return redirect('/')
 
 
-@app.route('/giris', methods=['GET','POST'])
+@app.route('/giris', methods=['GET', 'POST'])
 def giris():
     if request.method == 'GET':
         return render_template('giris.html')
@@ -49,10 +72,10 @@ def giris():
     # formdan gelen bilgileri al
     eposta = request.form.get("eposta")
     sifre = request.form.get("sifre")
-    #veri tabanında kayıt var mı?
-    u = user.find_one({'eposta':eposta})
+    # veri tabanında kayıt var mı?
+    u = user.find_one({'eposta': eposta})
     # kullanıcı epostası var mı?
-    
+
     if u is not None:
         # epostaya ait olan kullanıcı var
         if sifre == u.get('sifre'):
@@ -60,20 +83,21 @@ def giris():
             # kullanıcının epostasını session içine al
             session['eposta'] = eposta
             # todo ekleyebileceği sayfaya yönlendiriyoruz.
-            return redirect('/todos')
+            return redirect('/')
         else:
             flash("Hatalı şifre girdiniz")
             return redirect('/giris')
     else:
-        flash(f"Sistemde {eposta} eposta adresi bulunamadı. Lütfen kayıt olun.")
+        flash(
+            f"Sistemde {eposta} eposta adresi bulunamadı. Lütfen kayıt olun.")
         return redirect('/giris')
-    
-    
+
+
 @app.route('/kapat')
 def kapat():
     session.pop('eposta', None)
     return redirect('/')
-    
+
 
 @app.route('/todos')
 def todos():
